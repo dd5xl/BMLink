@@ -12,3 +12,6 @@ You must also insert the DMR-ID of your repeater / hotspot below.
 
 Please keep in mind that you can only modify repeaters where you are assigned as a sysop.
 (And your own devices of course...)
+
+### Dependencies
+pip3 install requests
