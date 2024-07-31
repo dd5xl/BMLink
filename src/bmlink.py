@@ -38,7 +38,7 @@ def showHelp(retCode=0):
     if retCode == 1:
         print ("Error: wrong number of arguments, 3 expected.")
     elif retCode == 2:
-        print ("Error arg1: wrong command, 'start' or 'stop' expected.")
+        print ("Error arg1: wrong command, 'start', 'stop' or 'list' expected.")
     elif retCode == 3:
         print ("Error arg2: wrong slot number, 1 or 2 expected.")
     elif retCode == 4:
@@ -48,15 +48,25 @@ def showHelp(retCode=0):
     exit (retCode)
 
 
+def showTGs (tgStr):
+    tgList = json.loads(tgStr)
+    for slot in ["1", "2"]:
+        for tgDict in tgList:
+            if tgDict['slot'] == slot:
+                print (f"Slot {tgDict['slot']} : {tgDict['talkgroup']}")
+        print()
+    return len(tgList)
+
+
 def bmLink():
     APIENDP = "https://api.brandmeister.network/v2/"
 
-    if len (sys.argv) == 4: # 4 arguments incl. cmd
+    if len (sys.argv) > 1: # at least 1 arugument?
+        req = APIENDP + f"device/{DMRID}/talkgroup"
         if sys.argv[1].lower() in ["start", "stop"]:
             if sys.argv[2] in ["1", "2"]:
                 if sys.argv[3].isdigit():
                     jdata = json.dumps({"slot":sys.argv[2], "group":sys.argv[3]})
-                    req = APIENDP + f"device/{DMRID}/talkgroup"
                     if sys.argv[1] == "start":
                         print (f"Linking TG{sys.argv[3]} on node {DMRID} to slot {sys.argv[2]}: ", end="")
                         resp = requests.post(req, \
@@ -72,17 +82,29 @@ def bmLink():
                                                       "Accept" : "application/json, text/plain, */*", \
                                                       "Authorization" : "Bearer " + APIKEY})
                     if resp.status_code == 200:
-                        print (f"API request successful, ({resp.status_code}), OK.")
+                        print (f"API request successful, ({resp.status_code}).")
                     else:
                         print (f"API request failed, ({resp.status_code}), Error.")
                         return 128
                 else:
-                    showHelp(4)
+                    showHelp(4) # invalid TG number
             else:
-                showHelp(3)
-        else:
+                showHelp(3) # wrong slot
+        elif sys.argv[1].lower() == "list":
+            resp=requests.get(req, \
+                                   headers={"Content-Type" : "application/json", \
+                                          "Accept" : "application/json, text/plain, */*", \
+                                          "Authorization" : "Bearer " + APIKEY})
+            if resp.status_code == 200:
+                print (f"API request successful, ({resp.status_code}).\n")
+                print (f"Currently linked TGs on node {DMRID}:\n")
+                showTGs(resp.text)
+            else:
+                print (f"API request failed, ({resp.status_code}), Error.")
+                return 128
+        else: # wrong command
             showHelp(2)
-    else:
+    else: # wrong length
         showHelp(1)
     return 0
     
